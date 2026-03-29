@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Quiz Game</title>
+    <style>
+        /* General Body Styles */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            /* A subtle gradient background for visual appeal */
+            background: linear-gradient(135deg, #f5f7fa, #c3cfe2);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh; /* Full viewport height */
+            margin: 0;
+            color: #333; /* Dark gray for text */
+            padding: 20px;
+            box-sizing: border-box; /* Include padding in element's total width and height */
+        }
+
+        /* Quiz Container Styling */
+        .quiz-container {
+            background-color: #ffffff;
+            border-radius: 12px;
+            /* Soft shadow for depth */
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            max-width: 700px;
+            width: 100%;
+            text-align: center;
+            box-sizing: border-box;
+            animation: fadeIn 0.8s ease-out; /* Simple fade-in animation */
+        }
+
+        /* Fade-in animation for the quiz container */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        h1 {
+            color: #4CAF50; /* A pleasant green for the main title */
+            margin-bottom: 25px;
+            font-size: 2.2em;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.05); /* Subtle text shadow */
+        }
+
+        h2 {
+            color: #3f51b5; /* A pleasant blue for section titles */
+            margin-bottom: 15px;
+            font-size: 1.8em;
+        }
+
+        #question-text {
+            font-size: 1.4em;
+            margin-bottom: 30px;
+            color: #444;
+            line-height: 1.6;
+            min-height: 60px; /* Ensure consistent height for question text */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Options Container for single/multi select */
+        #options-container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px; /* Space between options */
+            margin-bottom: 30px;
+        }
+
+        /* Individual Option Label Styling (for radio/checkbox labels) */
+        .option-label {
+            background-color: #e0f2f7; /* Light blue background for options */
+            border: 1px solid #b2ebf2;
+            border-radius: 8px;
+            padding: 15px 20px;
+            cursor: pointer;
+            font-size: 1.1em;
+            text-align: left;
+            transition: all 0.2s ease-in-out; /* Smooth transitions for hover/selection */
+            display: flex; /* Use flex to align input and text */
+            align-items: center;
+        }
+
+        .option-label:hover {
+            background-color: #c0ebf5;
+            border-color: #80d8f7;
+            transform: translateY(-2px); /* Lift effect on hover */
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+        }
+
+        /* Hide default radio/checkbox inputs to style their parent label */
+        .option-label input[type="radio"],
+        .option-label input[type="checkbox"] {
+            /* Visually hide the input but keep it accessible for screen readers */
+            position: absolute;
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        /* Styling for the text content within the label */
+        .option-label span {
+            display: block;
+            flex-grow: 1; /* Allows text to take up available space */
+            padding-left: 10px; /* Space for a custom indicator if we had one */
+        }
+
+        /* Custom styling for selected option (applied to the label itself) */
+        .option-label.selected {
+            background-color: #4CAF50; /* Green for selected */
+            color: white;
+            font-weight: bold;
+            border-color: #388E3C;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        /* Fill-in-the-blanks input field */
+        #fill-in-input {
+            width: calc(100% - 40px); /* Account for padding */
+            padding: 15px 20px;
+            margin-top: 20px;
+            margin-bottom: 30px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-size: 1.1em;
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.08); /* Inner shadow for depth */
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        #fill-in-input:focus {
+            border-color: #4CAF50;
+            outline: none; /* Remove default outline */
+            box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.2); /* Green glow on focus */
+        }
+
+        /* Navigation Buttons Container */
+        .navigation-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+
+        /* Styling for all navigation buttons */
+        .nav-button {
+            background-color: #3f51b5; /* Blue */
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 25px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: background-color 0.2s ease, transform 0.1s ease;
+            flex: 1; /* Allow buttons to grow and fill space */
+            margin: 0 5px; /* Space between buttons */
+            min-width: 120px; /* Minimum width for buttons */
+        }
+
+        .nav-button:hover:not(:disabled) {
+            background-color: #303f9f; /* Darker blue on hover */
+            transform: translateY(-1px); /* Slight lift effect */
+        }
+
+        .nav-button:active:not(:disabled) {
+            transform: translateY(0); /* Press effect */
+        }
+
+        .nav-button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+            opacity: 0.7; /* Dim disabled buttons */
+        }
+
+        /* Specific styling for the submit button */
+        #submit-btn {
+            background-color: #f44336; /* Red for submit */
+        }
+
+        #submit-btn:hover:not(:disabled) {
+            background-color: #d32f2f; /* Darker red on hover */
+        }
+
+        /* Specific styling for the restart button */
+        #restart-btn {
+            background-color: #00bcd4; /* Cyan for restart */
+            margin-top: 20px;
+            width: auto; /* Allow it to size based on content */
+            padding: 15px 30px;
+        }
+
+        #restart-btn:hover {
+            background-color: #0097a7;
+        }
+
+        /* Score Area Styling */
+        #score-area {
+            margin-top: 30px;
+            padding: 20px;
+            background-color: #e8f5e9; /* Light green background */
+            border: 1px solid #a5d6a7;
+            border-radius: 8px;
+            animation: fadeIn 0.8s ease-out; /* Fade-in for score area */
+        }
+
+        #score-area p {
+            font-size: 1.3em;
+            color: #2e7d32;
+        }
+
+        #final-score {
+            font-weight: bold;
+            color: #4CAF50;
+            font-size: 1.5em;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .quiz-container {
+                margin: 20px;
+                padding: 20px;
+            }
+
+            h1 {
+                font-size: 1.8em;
+            }
+
+            #question-text {
+                font-size: 1.2em;
+                min-height: 50px;
+            }
+
+            .option-label {
+                padding: 12px 15px;
+                font-size: 1em;
+            }
+
+            .nav-button {
+                padding: 10px 20px;
+                font-size: 1em;
+                margin: 0 3px;
+                min-width: unset; /* Remove min-width on smaller screens */
+            }
+        }
+
+        @media (max-width: 480px) {
+            .quiz-container {
+                padding: 15px;
+                border-radius: 8px;
+            }
+
+            h1 {
+                font-size: 1.5em;
+                margin-bottom: 20px;
+            }
+
+            #question-text {
+                font-size: 1.1em;
+                margin-bottom: 20px;
+                min-height: 40px;
+            }
+
+            .option-label {
+                padding: 10px 12px;
+                font-size: 0.95em;
+            }
+
+            .navigation-buttons {
+                flex-direction: column; /* Stack buttons vertically */
+                gap: 10px; /* Space between stacked buttons */
+            }
+
+            .nav-button {
+                width: 100%; /* Full width for stacked buttons */
+                margin: 0;
+                padding: 12px 15px;
+            }
+
+            #restart-btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="quiz-container" id="quiz-container">
+        <h1>Interactive Quiz Game</h1>
+
+        <!-- Question and Navigation Area -->
+        <div id="question-area">
+            <p id="question-text">Loading question...</p>
+
+            <!-- Options for single and multi-select questions -->
+            <div id="options-container">
+                <!-- Options will be dynamically loaded here by JavaScript -->
+            </div>
+
+            <!-- Input for fill-in-the-blanks questions -->
+            <div id="fill-in-container" style="display: none;">
+                <input type="text" id="fill-in-input" placeholder="Type your answer here">
+            </div>
+
+            <!-- Navigation Buttons -->
+            <div class="navigation-buttons">
+                <button id="prev-btn" class="nav-button" disabled>Previous</button>
+                <button id="next-btn" class="nav-button">Next</button>
+                <button id="submit-btn" class="nav-button" style="display: none;">Submit Quiz</button>
+            </div>
+        </div>
+
+        <!-- Score Display Area (initially hidden) -->
+        <div id="score-area" style="display: none;">
+            <h2>Quiz Complete!</h2>
+            <p>Your final score is: <span id="final-score">0</span> out of <span id="total-questions">0</span></p>
+            <button id="restart-btn" class="nav-button">Play Again</button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- Quiz Data Structure ---
+            // Each object in the questions array represents a single quiz question.
+            // - `question`: The text of the question.
+            // - `type`: 'single' for radio buttons, 'multi' for checkboxes, 'fill-in' for text input.
+            // - `options`: (Optional, for 'single'/'multi') An array of strings for the answer choices.
+            // - `correctAnswer`:
+            //    - For 'single': The index (0-based) of the correct option in the `options` array.
+            //    - For 'multi': An array of indices of the correct options.
+            //    - For 'fill-in': A string representing the correct answer (case-insensitive for comparison).
+            // - `userAnswer`: Stores the user's selected/typed answer for the current question.
+            //    - For 'single': The index of the selected option, or `null` if none.
+            //    - For 'multi': An array of indices of selected options, or an empty array if none.
+            //    - For 'fill-in': The user's typed string, or an empty string if none.
+            const questions = [
+                {
+                    question: "What does HTML stand for?",
+                    type: "single",
+                    options: ["Hyper Text Markup Language", "Hyperlink and Text Markup Language", "Home Tool Markup Language", "Hyper Text Mover Language"],
+                    correctAnswer: 0,
+                    userAnswer: null
+                },
+                {
+                    question: "Which of the following are JavaScript frameworks/libraries?",
+                    type: "multi",
+                    options: ["React", "Angular", "Vue.js", "jQuery", "Bootstrap (CSS Framework)"],
+                    correctAnswer: [0, 1, 2, 3], // React, Angular, Vue.js, jQuery
+                    userAnswer: []
+                },
+                {
+                    question: "What CSS property is used for making text bold?",
+                    type: "fill-in",
+                    correctAnswer: "font-weight", // Will be compared case-insensitively
+                    userAnswer: ""
+                },
+                {
+                    question: "Which HTML tag is used to define an internal style sheet?",
+                    type: "single",
+                    options: ["<script>", "<style>", "<css>", "<link>"],
+                    correctAnswer: 1,
+                    userAnswer: null
+                },
+                {
+                    question: "Select all valid ways to declare a variable in JavaScript:",
+                    type: "multi",
+                    options: ["var", "let", "const", "variable"],
+                    correctAnswer: [0, 1, 2], // var, let, const
+                    userAnswer: []
+                },
+                {
+                    question: "What is the primary language for styling web pages?",
+                    type: "fill-in",
+                    correctAnswer: "CSS",
+                    userAnswer: ""
+                },
+                {
+                    question: "Which company developed the React library?",
+                    type: "fill-in",
+                    correctAnswer: "Facebook",
+                    userAnswer: ""
+                }
+            ];
+
+            // --- DOM Elements ---
+            const questionArea = document.getElementById('question-area');
+            const scoreArea = document.getElementById('score-area');
+
+            const questionText = document.getElementById('question-text');
+            const optionsContainer = document.getElementById('options-container');
+            const fillInContainer = document.getElementById('fill-in-container');
+            const fillInInput = document.getElementById('fill-in-input');
+
+            const prevBtn = document.getElementById('prev-btn');
+            const nextBtn = document.getElementById('next-btn');
+            const submitBtn = document.getElementById('submit-btn');
+            const restartBtn = document.getElementById('restart-btn');
+
+            const finalScoreSpan = document.getElementById('final-score');
+            const totalQuestionsSpan = document.getElementById('total-questions');
+
+            // --- Quiz State Variables ---
+            let currentQuestionIndex = 0;
+            let score = 0;
+
+            // --- Event Listeners ---
+            // Navigate to the next question
+            nextBtn.addEventListener('click', () => {
+                saveAnswer(); // Save current answer before moving
+                currentQuestionIndex++;
+                loadQuestion();
+            });
+
+            // Navigate to the previous question
+            prevBtn.addEventListener('click', () => {
+                saveAnswer(); // Save current answer before moving
+                currentQuestionIndex--;
+                loadQuestion();
+            });
+
+            // Submit the quiz
+            submitBtn.addEventListener('click', () => {
+                saveAnswer(); // Save answer for the last question
+                calculateScore();
+                displayScore();
+            });
+
+            // Restart the quiz
+            restartBtn.addEventListener('click', restartQuiz);
+
+            // Live update for fill-in-the-blanks input
+            fillInInput.addEventListener('input', (event) => {
+                // Directly update the userAnswer in the questions array as the user types
+                questions[currentQuestionIndex].userAnswer = event.target.value;
+            });
+
+            // --- Functions ---
+
+            /**
+             * Loads and displays the current question based on `currentQuestionIndex`.
+             * It dynamically renders options based on the question type.
+             */
+            function loadQuestion() {
+                // Clear previous options and hide fill-in by default
+                optionsContainer.innerHTML = '';
+                fillInContainer.style.display = 'none';
+                fillInInput.value = ''; // Clear fill-in input field
+
+                // Get the current question object
+                const question = questions[currentQuestionIndex];
+                questionText.textContent = `${currentQuestionIndex + 1}. ${question.question}`;
+
+                // Render options based on question type
+                if (question.type === "single") {
+                    optionsContainer.style.display = 'flex'; // Show options container
+                    question.options.forEach((option, index) => {
+                        const label = document.createElement('label');
+                        label.classList.add('option-label');
+
+                        const radioInput = document.createElement('input');
+                        radioInput.type = 'radio';
+                        radioInput.name = 'option'; // All radio buttons for a question share the same name
+                        radioInput.value = index;
+
+                        // Check if this option was previously selected by the user
+                        if (question.userAnswer === index) {
+                            radioInput.checked = true;
+                            label.classList.add('selected'); // Add 'selected' class for visual feedback
+                        }
+
+                        label.appendChild(radioInput);
+                        label.appendChild(document.createElement('span')).textContent = option;
+
+                        // Event listener for single select: update userAnswer and visual state
+                        radioInput.addEventListener('change', (event) => {
+                            // Remove 'selected' class from all other labels in this question
+                            optionsContainer.querySelectorAll('.option-label').forEach(lbl => lbl.classList.remove('selected'));
+                            // Add 'selected' class to the current label
+                            label.classList.add('selected');
+                            // Update the user's answer in the data model
+                            questions[currentQuestionIndex].userAnswer = parseInt(event.target.value);
+                        });
+                        optionsContainer.appendChild(label);
+                    });
+                } else if (question.type === "multi") {
+                    optionsContainer.style.display = 'flex'; // Show options container
+                    question.options.forEach((option, index) => {
+                        const label = document.createElement('label');
+                        label.classList.add('option-label');
+
+                        const checkboxInput = document.createElement('input');
+                        checkboxInput.type = 'checkbox';
+                        checkboxInput.name = 'option'; // Name doesn't group checkboxes like radios
+                        checkboxInput.value = index;
+
+                        // Check if this option was previously selected by the user
+                        if (Array.isArray(question.userAnswer) && question.userAnswer.includes(index)) {
+                            checkboxInput.checked = true;
+                            label.classList.add('selected'); // Add 'selected' class for visual feedback
+                        }
+
+                        label.appendChild(checkboxInput);
+                        label.appendChild(document.createElement('span')).textContent = option;
+
+                        // Event listener for multi select: update userAnswer array and visual state
+                        checkboxInput.addEventListener('change', (event) => {
+                            const optionValue = parseInt(event.target.value);
+                            // Initialize userAnswer as an array if it's not already
+                            if (!Array.isArray(questions[currentQuestionIndex].userAnswer)) {
+                                questions[currentQuestionIndex].userAnswer = [];
+                            }
+
+                            if (event.target.checked) {
+                                label.classList.add('selected');
+                                // Add option to userAnswer if it's not already there
+                                if (!questions[currentQuestionIndex].userAnswer.includes(optionValue)) {
+                                    questions[currentQuestionIndex].userAnswer.push(optionValue);
+                                }
+                            } else {
+                                label.classList.remove('selected');
+                                // Remove option from userAnswer if unchecked
+                                questions[currentQuestionIndex].userAnswer = questions[currentQuestionIndex].userAnswer.filter(item => item !== optionValue);
+                            }
+                            // Sort the array for consistent comparison during scoring
+                            questions[currentQuestionIndex].userAnswer.sort((a, b) => a - b);
+                        });
+                        optionsContainer.appendChild(label);
+                    });
+                } else if (question.type === "fill-in") {
+                    optionsContainer.style.display = 'none'; // Hide options container for fill-in type
+                    fillInContainer.style.display = 'block'; // Show fill-in container
+                    fillInInput.value = question.userAnswer || ''; // Display saved answer if any
+                    fillInInput.focus(); // Automatically focus on the input field
+                }
+
+                updateNavigationButtons(); // Update button states (prev/next/submit)
+            }
+
+            /**
+             * Saves the current user's answer into the questions array.
+             * This is explicitly called before navigating or submitting to ensure
+             * the latest state, especially for 'fill-in-the-blanks' where a blur event
+             * might not have fired if the user directly clicks next/submit.
+             * For 'single'/'multi', the change listeners already keep `userAnswer` up-to-date.
+             */
+            function saveAnswer() {
+                const question = questions[currentQuestionIndex];
+                if (question.type === "fill-in") {
+                    // Trim whitespace from fill-in answers
+                    question.userAnswer = fillInInput.value.trim();
+                }
+            }
+
+            /**
+             * Updates the disabled/visibility state of navigation buttons.
+             */
+            function updateNavigationButtons() {
+                prevBtn.disabled = currentQuestionIndex === 0; // Disable 'Previous' on the first question
+                
+                // Show 'Next' or 'Submit' based on whether it's the last question
+                nextBtn.style.display = currentQuestionIndex === questions.length - 1 ? 'none' : 'inline-block';
+                submitBtn.style.display = currentQuestionIndex === questions.length - 1 ? 'inline-block' : 'none';
+            }
+
+            /**
+             * Calculates the final score by comparing user answers with correct answers.
+             */
+            function calculateScore() {
+                score = 0; // Reset score before recalculating
+                questions.forEach(question => {
+                    if (question.type === "single") {
+                        if (question.userAnswer !== null && question.userAnswer === question.correctAnswer) {
+                            score++;
+                        }
+                    } else if (question.type === "multi") {
+                        // Get sorted arrays of user's selection and correct answers for comparison
+                        const userSelected = Array.isArray(question.userAnswer) ? question.userAnswer.slice().sort((a, b) => a - b) : [];
+                        const correctSelected = Array.isArray(question.correctAnswer) ? question.correctAnswer.slice().sort((a, b) => a - b) : [];
+
+                        // Check if both arrays have the same length and all elements are identical
+                        if (userSelected.length === correctSelected.length &&
+                            userSelected.every((val, index) => val === correctSelected[index])) {
+                            score++;
+                        }
+                    } else if (question.type === "fill-in") {
+                        // Case-insensitive comparison for fill-in-the-blanks
+                        if (question.userAnswer && question.userAnswer.toLowerCase() === question.correctAnswer.toLowerCase()) {
+                            score++;
+                        }
+                    }
+                });
+            }
+
+            /**
+             * Displays the final score and hides the quiz question area.
+             */
+            function displayScore() {
+                questionArea.style.display = 'none'; // Hide questions
+                scoreArea.style.display = 'block'; // Show score
+                finalScoreSpan.textContent = score;
+                totalQuestionsSpan.textContent = questions.length;
+            }
+
+            /**
+             * Resets the quiz to its initial state, clearing all user answers and restarting from the first question.
+             */
+            function restartQuiz() {
+                currentQuestionIndex = 0;
+                score = 0;
+                // Reset all user answers in the data model
+                questions.forEach(question => {
+                    if (question.type === "single") {
+                        question.userAnswer = null;
+                    } else if (question.type === "multi") {
+                        question.userAnswer = [];
+                    } else if (question.type === "fill-in") {
+                        question.userAnswer = "";
+                    }
+                });
+
+                scoreArea.style.display = 'none'; // Hide score area
+                questionArea.style.display = 'block'; // Show questions area
+                loadQuestion(); // Load the first question to restart
+            }
+
+            // --- Initialize Quiz on Page Load ---
+            loadQuestion(); // Display the first question when the script runs
+        });
+    </script>
+</body>
+</html>
